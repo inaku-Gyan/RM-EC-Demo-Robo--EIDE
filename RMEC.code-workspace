@@ -1,0 +1,41 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "terminal.integrated.shellIntegration.enabled": false,
+    "clangd.arguments": ["--header-insertion=never"],
+    "files.autoGuessEncoding": true,
+    "C_Cpp.default.configurationProvider": "cl.eide",
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+      ".eideignore": "ignore",
+      "*.a51": "a51",
+      "*.h": "c",
+      "*.c": "c",
+      "*.hxx": "cpp",
+      "*.hpp": "cpp",
+      "*.c++": "cpp",
+      "*.cpp": "cpp",
+      "*.cxx": "cpp",
+      "*.cc": "cpp"
+    },
+    "[yaml]": {
+      "editor.insertSpaces": true,
+      "editor.tabSize": 4,
+      "editor.autoIndent": "advanced"
+    },
+    "EIDE.ARM.Option.AxfToElf": true // 调试需要用到生成的 .elf 文件，但是 Armcc 生成不了 .elf 文件，所以需要转换一下
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.cpptools",
+      "cl.eide",
+      "zixuanwang.linkerscript",
+      "ms-vscode.vscode-serial-monitor",
+      "marus25.cortex-debug"
+    ]
+  }
+}
