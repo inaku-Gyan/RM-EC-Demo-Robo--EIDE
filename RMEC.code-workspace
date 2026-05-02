@@ -50,7 +50,7 @@
       "https://www.schemastore.org/clangd.json": ".clangd"
     },
     // ----------------------------- EIDE 配置 -----------------------------
-    "EIDE.Option.EnableClangdConfigGenerator": true,
+    "EIDE.Option.EnableClangdConfigGenerator": true
   },
   // ----------------------------- VS Code 推荐插件配置 -----------------------------
   // 建议单独建立一个 VS Code Profile 来管理这些插件，这样就不会影响到其他项目的开发环境。
@@ -60,7 +60,7 @@
       "llvm-vs-code-extensions.vscode-clangd", // clangd 提供了比 Microsoft C/C++ 更强大的语言服务器功能
       "marus25.cortex-debug", // 提供调试功能
       "mcu-debug.rtos-views", // 调试时提供 RTOS 监控功能
-      "ms-vscode.vscode-serial-monitor", // 提供串口监视功能
+      "ms-vscode.vscode-serial-monitor" // 提供串口监视功能
       // "thecreativedodo.usbip-connect", // 将 Windows 上的 USB 设备（如调试器）转发到 WSL 中
       // "redhat.vscode-yaml",                // 语言支持：YAML
       // "github.vscode-github-actions",      // 语言支持：GitHub Actions
