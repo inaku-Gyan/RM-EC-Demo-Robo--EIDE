@@ -6,10 +6,19 @@
   ],
   "settings": {
     "terminal.integrated.shellIntegration.enabled": false,
-    "clangd.arguments": ["--header-insertion=never"],
-    "files.autoGuessEncoding": true,
+    // --------------------------- 语言服务器配置 ---------------------------
+    // clangd 配置
+    "clangd.arguments": [
+      "--background-index",        // 启用后台索引功能，以提高代码导航和智能提示的性能
+      "--clang-tidy",              // 启用 clang-tidy 进行代码检查
+      "--header-insertion=never"    
+    ],
+    // 禁用 Microsoft C/C++ 插件的 IntelliSense 功能，因为 clangd 插件已经提供了完整的代码分析和智能提示功能。
+    "C_Cpp.intelliSenseEngine": "disabled",
     "C_Cpp.default.configurationProvider": "cl.eide",
     "C_Cpp.errorSquiggles": "disabled",
+    // ---------------------------- 文件相关配置 ----------------------------
+    "files.autoGuessEncoding": true,
     "files.associations": {
       ".eideignore": "ignore",
       "*.a51": "a51",
@@ -22,20 +31,46 @@
       "*.cxx": "cpp",
       "*.cc": "cpp"
     },
+    // Formatters 设置
+    "[c]": {
+      "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    "[cpp]": {
+      "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
     "[yaml]": {
       "editor.insertSpaces": true,
       "editor.tabSize": 4,
       "editor.autoIndent": "advanced"
     },
-    "EIDE.ARM.Option.AxfToElf": true // 调试需要用到生成的 .elf 文件，但是 Armcc 生成不了 .elf 文件，所以需要转换一下
+    // YAML / JSON schemas 设置：以支持这些配置文件的语法检查和智能提示
+    "yaml.schemas": {
+      "https://www.schemastore.org/clang-tidy.json": ".clang-tidy",
+      "https://www.schemastore.org/clang-format-18.x.json": ".clang-format",
+      "https://www.schemastore.org/clangd.json": ".clangd"
+    },
+    // ----------------------------- EIDE 配置 -----------------------------
+    "EIDE.Option.EnableClangdConfigGenerator": true,
   },
+  // ----------------------------- VS Code 推荐插件配置 -----------------------------
+  // 建议单独建立一个 VS Code Profile 来管理这些插件，这样就不会影响到其他项目的开发环境。
   "extensions": {
     "recommendations": [
-      "ms-vscode.cpptools",
       "cl.eide",
-      "zixuanwang.linkerscript",
-      "ms-vscode.vscode-serial-monitor",
-      "marus25.cortex-debug"
+      "llvm-vs-code-extensions.vscode-clangd", // clangd 提供了比 Microsoft C/C++ 更强大的语言服务器功能
+      "marus25.cortex-debug", // 提供调试功能
+      "mcu-debug.rtos-views", // 调试时提供 RTOS 监控功能
+      "ms-vscode.vscode-serial-monitor", // 提供串口监视功能
+      // "thecreativedodo.usbip-connect", // 将 Windows 上的 USB 设备（如调试器）转发到 WSL 中
+      // "redhat.vscode-yaml",                // 语言支持：YAML
+      // "github.vscode-github-actions",      // 语言支持：GitHub Actions
+      // "zixuanwang.linkerscript",           // 语言支持：链接脚本
+      // "dan-c-underwood.arm",               // 语言支持：Arm 汇编
+      // "mhutchie.git-graph",   // 提供 Git 可视化功能
+      // "usernamehw.errorlens", // 将错误直接显示在代码中
+    ],
+    "unwantedRecommendations": [
+      "ms-vscode.cpptools" // 和 clangd 插件功能重合且冲突
     ]
   }
 }
