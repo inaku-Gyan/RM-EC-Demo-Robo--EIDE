@@ -15,6 +15,6 @@
 
 version: "2.1"
 options:
-    RobomasterBoardTypeC:
+    Debug:
         files: {}
         virtualPathFiles: {}
