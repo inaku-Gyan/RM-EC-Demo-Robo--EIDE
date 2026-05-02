@@ -32,7 +32,7 @@ QueueHandle_t                                          rx_queue = nullptr;
 
 }  // namespace
 
-// ─── CubeMX CDC 回调（从 bsp/interface.h 接入）────────────────────────────────
+// ─── CubeMX CDC 回调（从 bsp_interface.h 接入）────────────────────────────────
 
 extern "C" void usb_cdc_init_rx() {
     // TX 信号量初始为"已给出"，第一次 send() 可直接进行，无需等待 TransmitCplt。

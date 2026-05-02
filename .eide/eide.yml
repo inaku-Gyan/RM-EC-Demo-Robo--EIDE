@@ -3,7 +3,10 @@ name: RM-EC-Demo-Robo
 type: ARM
 deviceName: null
 packDir: null
-srcDirs: []
+srcDirs:
+  - bsp
+  - src
+  - lib/ecx
 virtualFolder:
   name: <virtual_root>
   files: []
@@ -15,8 +18,23 @@ miscInfo:
 targets:
   Debug:
     cppPreprocessAttrs:
-      defineList: []
-      incList: []
+      defineList:
+        - STM32F407xx
+        - USE_HAL_DRIVER
+        - USE_FULL_ASSERT
+      incList:
+        - bsp/CubeMX/Drivers/CMSIS/Device/ST/STM32F4xx/Include
+        - bsp/CubeMX/Drivers/CMSIS/Include
+        - bsp/CubeMX/Drivers/STM32F4xx_HAL_Driver/Inc
+        - bsp/CubeMX/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
+        - bsp/CubeMX/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
+        - bsp/CubeMX/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
+        - bsp/CubeMX/Middlewares/Third_Party/FreeRTOS/Source/include
+        - bsp/CubeMX/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
+        - bsp/CubeMX/Inc
+        - bsp
+        - src
+        - lib
       libList: []
     excludeList: []
     settings:
@@ -35,6 +53,10 @@ targets:
           c/cpp-compiler:
             language-c: gnu17
             language-cpp: gnu++20
+            no-exceptions: true
+            no-rtti: true
+            no-threadsafe-statics: true
+            no-use-cxa-atexit: true
             one-elf-section-per-data: true
             one-elf-section-per-function: true
             optimization: level-debug
@@ -53,7 +75,7 @@ targets:
             output-format: elf
             remove-unused-input-sections: true
             use-float-printf: true
-        scatterFilePath: STM32F407XX_FLASH.ld
+        scatterFilePath: bsp/CubeMX/STM32F407XX_FLASH.ld
         storageLayout:
           RAM: []
           ROM: []

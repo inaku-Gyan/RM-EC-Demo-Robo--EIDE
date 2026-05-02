@@ -1,4 +1,4 @@
-// bsp/interface.h — CubeMX 与 C++ 层之间的唯一耦合点
+// bsp_interface.h — CubeMX 与 C++ 层之间的唯一耦合点
 // C 兼容，不含任何 C++ 语法
 #pragma once
 #include <stdint.h>
