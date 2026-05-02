@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <span>
 
-#include "FreeRTOS.h"
+#include "FreeRTOS.h"  // IWYU pragma: keep
 #include "queue.h"
 
 namespace usb {

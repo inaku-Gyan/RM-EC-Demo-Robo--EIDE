@@ -1,4 +1,4 @@
-#include "FreeRTOS.h"
+#include "FreeRTOS.h"  // IWYU pragma: keep
 #include "task.h"
 
 // Stub: 1 kHz control loop skeleton.

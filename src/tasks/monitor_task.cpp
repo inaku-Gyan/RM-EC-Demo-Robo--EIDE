@@ -1,4 +1,4 @@
-#include "cmsis_os.h"
+#include "cmsis_os.h"  // IWYU pragma: keep
 
 // Stub: system monitor / heartbeat skeleton.
 // TODO: toggle LED, send USB heartbeat, check task stack watermarks.
