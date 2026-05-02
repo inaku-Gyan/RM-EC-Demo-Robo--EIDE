@@ -1,0 +1,42 @@
+{
+    // clangd: let it query arm-none-eabi-g++ for system include paths so that
+    // CMSIS / FreeRTOS / HAL headers resolve correctly without false positives.
+    // Covers the STM32CubeCLT default install and any toolchain on PATH.
+    "clangd.arguments": [
+        "--query-driver=**/arm-none-eabi-g*,**/arm-none-eabi-gcc*",
+        "--background-index",
+        "--clang-tidy",
+        "--header-insertion=never"
+    ],
+    // Disable IntelliSense; clangd handles everything for this project.
+    "C_Cpp.intelliSenseEngine": "disabled",
+    // Xmake extension
+    "xmake.buildDirectory": "${workspaceFolder}/build",
+    "xmake.additionalConfigArguments": [
+        "--plat=cross",
+        "--arch=arm",
+        "--mode=release"
+    ],
+    // Formatters 设置
+    "[c]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    "[cpp]": {
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    // YAML / JSON schemas 设置：以支持这些配置文件的语法检查和智能提示
+    "yaml.schemas": {
+        "https://www.schemastore.org/clang-tidy.json": ".clang-tidy",
+        "https://www.schemastore.org/clang-format-18.x.json": ".clang-format",
+        "https://www.schemastore.org/clangd.json": ".clangd"
+    },
+    "json.schemas": [
+        {
+            "fileMatch": [
+                ".vscode/settings.example.json",
+                ".vscode/settings.json",
+            ],
+            "url": "vscode://schemas/settings/user"
+        }
+    ],
+}

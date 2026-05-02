@@ -1,0 +1,74 @@
+BasedOnStyle: Google
+Language: Cpp
+Standard: c++20
+
+ColumnLimit: 100
+IndentWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+ConstructorInitializerIndentWidth: 4
+
+# 指针和引用的对齐方式
+
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# 对齐连续的赋值、声明、操作数和注释
+
+AlignConsecutiveAssignments: AcrossComments
+AlignConsecutiveDeclarations: AcrossComments
+AlignTrailingComments: true
+
+# 操作数对齐和换行
+
+AlignOperands: Align
+BreakBeforeBinaryOperators: NonAssignment
+
+# 短语句换行
+
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: OnlyFirstIf
+AllowShortLoopsOnASingleLine: true
+
+# 函数
+
+BreakAfterAttributes: Always
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: BlockIndent
+
+# 模板
+
+AlwaysBreakTemplateDeclarations: Yes
+SpaceAfterTemplateKeyword: true
+SpacesInAngles: Never
+
+# Concepts / Requires
+
+BreakBeforeConceptDeclarations: Always
+RequiresClausePosition: OwnLine
+IndentRequiresClause: true
+RequiresExpressionIndentation: OuterScope
+
+# 大括号风格
+
+BreakBeforeBraces: Attach
+
+# class 初始化列表、继承列表
+
+BreakConstructorInitializers: BeforeColon
+BreakInheritanceList: BeforeColon
+
+# include 排序
+
+IncludeBlocks: Regroup
+SortIncludes: CaseSensitive
+
+# 空格出现位置
+
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
+
+UseTab: Never
