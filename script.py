@@ -165,6 +165,10 @@ def format_file_inplace(clang_format: str, file_path: str) -> bool:
     path = Path(file_path)
     original = path.read_bytes()
     result = subprocess.run([clang_format, file_path], capture_output=True)
+    if result.returncode != 0:
+        # clang-format 报错（如文件语法有误），跳过写回，将错误信息输出到 stderr
+        sys.stderr.buffer.write(result.stderr)
+        return False
     formatted = result.stdout
     if formatted != original:
         path.write_bytes(formatted)
@@ -242,11 +246,11 @@ def run_fmt_check(root: Path, clang_format: str, quiet: bool) -> NoReturn:
 
     failed = 0
     for target_file in files:
-        result = subprocess.run(
-            [clang_format, target_file, "--dry-run", "--Werror"],
-            capture_output=True,
-            text=True,
-        )
+        # 静默模式仅需判断通过与否，用 --ferror-limit=1 提前终止检查以提升性能
+        args = [clang_format, target_file, "--dry-run", "--Werror"]
+        if quiet:
+            args.append("--ferror-limit=1")
+        result = subprocess.run(args, capture_output=True, text=True)
         if result.returncode == 0:
             continue
 
