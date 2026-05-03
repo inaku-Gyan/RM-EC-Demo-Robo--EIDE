@@ -1,24 +1,21 @@
-Checks: >
-  modernize-*,
-  bugprone-*,
-  readability-*,
-  performance-*,
-  cppcoreguidelines-pro-type-cstyle-cast,
-  cppcoreguidelines-pro-type-vararg,
-  -fuchsia-*,
-  -abseil-*,
-  -modernize-use-trailing-return-type,
-  -readability-avoid-nested-conditional-operator,
-  -readability-magic-numbers,
-  -readability-identifier-length,
-  -cppcoreguidelines-avoid-magic-numbers,
-  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
-  -bugprone-easily-swappable-parameters,
-  -clang-analyzer-core.FixedAddressDereference
-
 WarningsAsErrors: "*"
 
 HeaderFilterRegex: "src/|lib/ecx/"
+
+Checks: >
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  clang-analyzer-*,
+  -clang-analyzer-core.FixedAddressDereference,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  performance-*,
+  portability-*
+  readability-*,
+  -readability-avoid-nested-conditional-operator,
+  -readability-identifier-length,
+  -readability-magic-numbers,
 
 CheckOptions:
   - key: readability-identifier-naming.ClassCase
@@ -39,5 +36,20 @@ CheckOptions:
     value: true
   - key: readability-implicit-bool-conversion.AllowLogicalOperatorConversion
     value: true
+
+---
+Language: Cpp
+
+Checks: >
+  cppcoreguidelines-pro-type-cstyle-cast,
+  cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  modernize-*,
+
+CheckOptions:
   - key: modernize-use-default-member-init.UseAssignment
     value: "0"
+
+---
+Language: C
