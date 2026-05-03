@@ -22,6 +22,7 @@ targets:
         - STM32F407xx
         - USE_HAL_DRIVER
         - USE_FULL_ASSERT
+        - DEBUG
       incList:
         - bsp/CubeMX/Drivers/CMSIS/Device/ST/STM32F4xx/Include
         - bsp/CubeMX/Drivers/CMSIS/Include
