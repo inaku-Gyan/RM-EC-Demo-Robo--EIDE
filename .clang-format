@@ -8,6 +8,10 @@ ContinuationIndentWidth: 4
 AccessModifierOffset: -4
 ConstructorInitializerIndentWidth: 4
 
+# #if 块内部的预编译指令缩进
+IndentPPDirectives: BeforeHash
+PPIndentWidth: 2
+
 # 指针和引用的对齐方式
 
 PointerAlignment: Left
@@ -38,6 +42,7 @@ BreakAfterAttributes: Always
 BinPackArguments: false
 BinPackParameters: false
 AlignAfterOpenBracket: BlockIndent
+AlwaysBreakAfterReturnType: None
 
 # 模板
 
@@ -72,3 +77,6 @@ SpaceAfterCStyleCast: false
 SpaceBeforeParens: ControlStatements
 
 UseTab: Never
+
+KeepEmptyLinesAtTheStartOfBlocks: true
+MaxEmptyLinesToKeep: 1
