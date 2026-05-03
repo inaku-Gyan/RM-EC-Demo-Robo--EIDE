@@ -4,6 +4,7 @@
 from __future__ import annotations as _annotations
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -19,11 +20,16 @@ USER_DIRS = ("src", "lib")
 
 VALID_SUFFIXES = frozenset((".c", ".h", ".cpp", ".hpp"))
 
+# clang-format 和 clang-tidy 的版本要求（最低大版本号，最高大版本号）
+# 使用 None 表示该方向不限制版本
+CLANG_FORMAT_VERSION_RANGE: tuple[int | None, int | None] = (14, None)
+CLANG_TIDY_VERSION_RANGE: tuple[int | None, int | None] = (14, None)
+
 # endregion
 
 # region CLI 参数
 
-CommandType = Literal["list", "fmt", "lint", "clean"]
+CommandType = Literal["list", "fmt", "lint", "clean", "check-tools"]
 
 VerboseLevel = Literal[0, 1, 2, 3]
 
@@ -78,6 +84,20 @@ def parse_args() -> ParsedArgs:
         help="同时删除项目根目录的 .clangd 和 .cache",
     )
 
+    check_tools_parser = subparsers.add_parser(
+        "check-tools", help="检查 clang-format 和 clang-tidy 是否可用且版本符合要求"
+    )
+    check_tools_parser.add_argument(
+        "--clang-format",
+        default="clang-format",
+        help="clang-format 可执行文件名或路径（默认：clang-format）",
+    )
+    check_tools_parser.add_argument(
+        "--clang-tidy",
+        default="clang-tidy",
+        help="clang-tidy 可执行文件名或路径（默认：clang-tidy）",
+    )
+
     return cast(ParsedArgs, parser.parse_args())
 
 
@@ -124,6 +144,22 @@ def ensure_tool(binary: str) -> str:
     return resolved
 
 
+def parse_tool_version(version_output: str) -> int | None:
+    """从版本输出中解析大版本号。"""
+    m = re.search(r"version\s+(\d+)", version_output)
+    return int(m.group(1)) if m else None
+
+
+def check_version_in_range(major: int, version_range: tuple[int | None, int | None]) -> bool:
+    """检查大版本号是否在要求的范围内。"""
+    lo, hi = version_range
+    if lo is not None and major < lo:
+        return False
+    if hi is not None and major > hi:
+        return False
+    return True
+
+
 def quick_check(clang_format: str, target_file: str) -> bool:
     result = subprocess.run(
         [clang_format, target_file, "--dry-run", "--Werror", "--ferror-limit=1"],
@@ -135,6 +171,64 @@ def quick_check(clang_format: str, target_file: str) -> bool:
 # endregion
 
 # region 主要操作
+
+
+def run_check_tools(clang_format: str, clang_tidy: str) -> NoReturn:
+    """检查工具是否可用且版本符合要求。"""
+    print("检查工具可用性及版本...\n")
+    all_ok = True
+
+    for binary, version_range, label in [
+        (clang_format, CLANG_FORMAT_VERSION_RANGE, "clang-format"),
+        (clang_tidy, CLANG_TIDY_VERSION_RANGE, "clang-tidy"),
+    ]:
+        lo, hi = version_range
+        if lo is not None and hi is not None:
+            range_desc = f"[{lo}, {hi}]"
+        elif lo is not None:
+            range_desc = f">= {lo}"
+        elif hi is not None:
+            range_desc = f"<= {hi}"
+        else:
+            range_desc = "不限"
+
+        resolved = shutil.which(binary)
+        if not resolved:
+            print(f"  ✗ {label}：未找到（{binary!r} 不在 PATH 中）")
+            print(f"    → 请安装 {label}（要求版本：{range_desc}）")
+            all_ok = False
+            continue
+
+        version_result = subprocess.run(
+            [resolved, "--version"],
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        version_str = version_result.stdout.strip()
+        major = parse_tool_version(version_str)
+
+        if major is None:
+            print(f"  ✗ {label}：无法解析版本号")
+            print(f"    版本信息：{version_str}")
+            all_ok = False
+        elif not check_version_in_range(major, version_range):
+            print(f"  ✗ {label}：版本 {major} 不符合要求（要求：{range_desc}）")
+            print(f"    当前版本：{version_str}")
+            print(f"    → 请升级 {label}")
+            all_ok = False
+        else:
+            print(f"  ✓ {label}：版本 {major} 符合要求（要求：{range_desc}）")
+            print(f"    {version_str}")
+
+    print()
+    if all_ok:
+        print("所有工具检查通过。")
+        sys.exit(0)
+    else:
+        print("工具检查未通过，请按照上述提示安装或升级相应工具。")
+        sys.exit(1)
 
 
 def run_fmt_check(root: Path, clang_format: str, verbose: VerboseLevel) -> NoReturn:
@@ -306,6 +400,8 @@ def main() -> NoReturn:
             return run_lint_check(root, clang_tidy, args.verbose)
         case "clean":
             return run_clean(root, args.clean_all)
+        case "check-tools":
+            return run_check_tools(args.clang_format, args.clang_tidy)
 
 
 # endregion
