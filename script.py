@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cross-platform script for formatting, linting, and other checks."""
+"""用于格式化、静态检查及其他代码检查的跨平台脚本。"""
 
 from __future__ import annotations as _annotations
 
@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Literal, NoReturn, cast
 
-# region Configuration
+# region 配置
 
 # 用户代码所在的目录（相对于项目根目录）
 # 只会处理这些目录下的文件，其他目录（例如 .vscode、.github、build 等）会被忽略
@@ -21,7 +21,7 @@ VALID_SUFFIXES = frozenset((".c", ".h", ".cpp", ".hpp"))
 
 # endregion
 
-# region CLI Argument
+# region CLI 参数
 
 CommandType = Literal["list", "fmt", "lint", "clean"]
 
@@ -38,44 +38,44 @@ class ParsedArgs(argparse.Namespace):
 
 
 def parse_args() -> ParsedArgs:
-    parser = argparse.ArgumentParser(description="A script for formatting, linting, and other checks.")
+    parser = argparse.ArgumentParser(description="用于格式化、静态检查及其他代码检查的脚本。")
     parser.add_argument(
         "--verbose",
         choices=VerboseLevel.__args__,
         default=2,
         type=int,
-        help="verbosity level",
+        help="详细程度（0-3）",
     )
-    # Set defaults so all attributes are always present regardless of which subcommand is used
+    # 设置默认值，使所有子命令都能访问这些属性
     parser.set_defaults(fix=False, clean_all=False, clang_format="clang-format", clang_tidy="clang-tidy")
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("list", help="list all user source files")
+    subparsers.add_parser("list", help="列出所有用户源文件")
 
-    fmt_parser = subparsers.add_parser("fmt", help="check or apply clang-format formatting")
-    fmt_parser.add_argument("--fix", action="store_true", help="apply formatting (default: check only)")
+    fmt_parser = subparsers.add_parser("fmt", help="检查或应用 clang-format 格式化")
+    fmt_parser.add_argument("--fix", action="store_true", help="应用格式化（默认：仅检查）")
     fmt_parser.add_argument(
         "--clang-format",
         default="clang-format",
-        help="clang-format executable name or path (default: clang-format)",
+        help="clang-format 可执行文件名或路径（默认：clang-format）",
     )
 
-    lint_parser = subparsers.add_parser("lint", help="check or apply clang-tidy linting")
-    lint_parser.add_argument("--fix", action="store_true", help="apply fixes (default: check only)")
+    lint_parser = subparsers.add_parser("lint", help="检查或应用 clang-tidy 静态分析")
+    lint_parser.add_argument("--fix", action="store_true", help="应用修复（默认：仅检查）")
     lint_parser.add_argument(
         "--clang-tidy",
         default="clang-tidy",
-        help="clang-tidy executable name or path (default: clang-tidy)",
+        help="clang-tidy 可执行文件名或路径（默认：clang-tidy）",
     )
 
-    clean_parser = subparsers.add_parser("clean", help="remove build artifacts")
+    clean_parser = subparsers.add_parser("clean", help="删除构建产物")
     clean_parser.add_argument(
         "-a",
         "--all",
         dest="clean_all",
         action="store_true",
-        help="also remove .clangd and .cache from the project root",
+        help="同时删除项目根目录的 .clangd 和 .cache",
     )
 
     return cast(ParsedArgs, parser.parse_args())
@@ -83,7 +83,7 @@ def parse_args() -> ParsedArgs:
 
 # endregion
 
-# region Helper Functions
+# region 辅助函数
 
 
 def project_root() -> Path:
@@ -110,7 +110,7 @@ def collect_file_paths_as_posix(root: Path) -> tuple[str, ...]:
 def ensure_tool(binary: str) -> str:
     resolved = shutil.which(binary)
     if not resolved:
-        print(f"ERROR: {binary} not found!", file=sys.stderr)
+        print(f"错误：未找到工具 {binary!r}，请确认已安装并在 PATH 中。", file=sys.stderr)
         sys.exit(1)
 
     version = subprocess.run(
@@ -134,18 +134,18 @@ def quick_check(clang_format: str, target_file: str) -> bool:
 
 # endregion
 
-# region Main Actions
+# region 主要操作
 
 
 def run_fmt_check(root: Path, clang_format: str, verbose: VerboseLevel) -> NoReturn:
-    print("Checking user code format...")
+    print("检查用户代码格式...")
     files = collect_file_paths_as_posix(root)
-    print(f"{len(files)} files found.\n", flush=True)  # 刷新一下，避免 subprocess 的输出出现在这行之前
+    print(f"共找到 {len(files)} 个文件。\n", flush=True)  # 刷新一下，避免 subprocess 的输出出现在这行之前
 
     failed = 0
     for target_file in files:
         if verbose == 3:
-            print(f"Checking: {target_file}", flush=True)
+            print(f"正在检查：{target_file}", flush=True)
 
         if quick_check(clang_format, target_file):
             continue  # Already formatted
@@ -153,7 +153,7 @@ def run_fmt_check(root: Path, clang_format: str, verbose: VerboseLevel) -> NoRet
         failed += 1
 
         if verbose == 1:
-            print(f"Needs formatting: {target_file}", flush=True)
+            print(f"需要格式化：{target_file}", flush=True)
         elif verbose >= 2:
             #  重新执行以输出彩色错误信息
             subprocess.run(
@@ -166,17 +166,17 @@ def run_fmt_check(root: Path, clang_format: str, verbose: VerboseLevel) -> NoRet
         print()
 
     if failed > 0:
-        print(f"Format check failed: {failed} file(s) need formatting.")
+        print(f"格式检查失败：{failed} 个文件需要格式化。")
         sys.exit(1)
 
-    print("All files are properly formatted.")
+    print("所有文件格式正确。")
     sys.exit(0)
 
 
 def run_fmt_fix(root: Path, clang_format: str, verbose: VerboseLevel) -> NoReturn:
-    print("Formatting user code files...")
+    print("格式化用户代码文件...")
     files = collect_file_paths_as_posix(root)
-    print(f"{len(files)} files found.\n")
+    print(f"共找到 {len(files)} 个文件。\n")
 
     cnt = 0
 
@@ -184,7 +184,7 @@ def run_fmt_fix(root: Path, clang_format: str, verbose: VerboseLevel) -> NoRetur
         if verbose >= 1:
             # Check
             if verbose == 3:
-                print(f"Checking: {target_file}")
+                print(f"正在检查：{target_file}")
 
             if quick_check(clang_format, target_file):
                 continue  # Already formatted
@@ -192,27 +192,27 @@ def run_fmt_fix(root: Path, clang_format: str, verbose: VerboseLevel) -> NoRetur
             cnt += 1
 
         if verbose >= 2:
-            print(f"Formatting: {target_file}")
+            print(f"正在格式化：{target_file}")
 
         subprocess.run([clang_format, "-i", target_file], check=True)
 
     if verbose == 0:
-        print("Done.")
+        print("完成。")
     else:
-        print(f"Done. Formatted {cnt} files.")
+        print(f"完成，共格式化 {cnt} 个文件。")
 
     sys.exit(0)
 
 
 def run_lint_check(root: Path, clang_tidy: str, verbose: VerboseLevel) -> NoReturn:
-    print("Linting user code files...")
+    print("对用户代码文件进行静态分析...")
     files = collect_file_paths_as_posix(root)
-    print(f"{len(files)} files found.\n", flush=True)  # 刷新一下，避免 subprocess 的输出出现在这行之前
+    print(f"共找到 {len(files)} 个文件。\n", flush=True)  # 刷新一下，避免 subprocess 的输出出现在这行之前
 
     failed = 0
     for target_file in files:
         if verbose == 3:
-            print(f"Checking: {target_file}", flush=True)
+            print(f"正在检查：{target_file}", flush=True)
 
         result = subprocess.run(
             [clang_tidy, "--quiet", target_file],
@@ -226,7 +226,7 @@ def run_lint_check(root: Path, clang_tidy: str, verbose: VerboseLevel) -> NoRetu
         failed += 1
 
         if verbose == 1:
-            print(f"Lint issues found: {target_file}", flush=True)
+            print(f"存在静态分析问题：{target_file}", flush=True)
         elif verbose >= 2 and result.returncode != 0:
             # 当 capture_output=False 时输出已直接流向终端，此处无需重复打印
             pass
@@ -235,28 +235,28 @@ def run_lint_check(root: Path, clang_tidy: str, verbose: VerboseLevel) -> NoRetu
         print()
 
     if failed > 0:
-        print(f"Lint check failed: {failed} file(s) have issues.")
+        print(f"静态分析失败：{failed} 个文件存在问题。")
         sys.exit(1)
 
-    print("All files passed lint checks.")
+    print("所有文件通过静态分析。")
     sys.exit(0)
 
 
 def run_lint_fix(root: Path, clang_tidy: str, verbose: VerboseLevel) -> NoReturn:
-    print("Applying lint fixes to user code files...")
+    print("对用户代码文件应用静态分析修复...")
     files = collect_file_paths_as_posix(root)
-    print(f"{len(files)} files found.\n")
+    print(f"共找到 {len(files)} 个文件。\n")
 
     for target_file in files:
         if verbose >= 2:
-            print(f"Linting: {target_file}")
+            print(f"正在处理：{target_file}")
 
         subprocess.run(
             [clang_tidy, "--fix", "--fix-errors", "--quiet", target_file],
             check=False,
         )
 
-    print("Done.")
+    print("完成。")
     sys.exit(0)
 
 
@@ -267,7 +267,7 @@ def run_clean(root: Path, clean_all: bool) -> NoReturn:
 
     for target in targets:
         if not target.exists():
-            print(f"Skipped (not found): {target.relative_to(root)}")
+            print(f"跳过（不存在）：{target.relative_to(root)}")
             continue
 
         if target.is_dir():
@@ -275,14 +275,14 @@ def run_clean(root: Path, clean_all: bool) -> NoReturn:
         else:
             target.unlink()
 
-        print(f"Removed: {target.relative_to(root)}")
+        print(f"已删除：{target.relative_to(root)}")
 
     sys.exit(0)
 
 
 # endregion
 
-# region Entry Point
+# region 入口点
 
 
 def main() -> NoReturn:
