@@ -1,4 +1,5 @@
 #include "comm/usb_comm.hpp"
+#include "all_tasks.hpp"
 
 // Stub: receives USB packets and discards them.
 // TODO: add COBS decode → CRC check → MsgType dispatch.

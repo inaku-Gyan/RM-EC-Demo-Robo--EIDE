@@ -1,8 +1,7 @@
 #include <array>
 
-#include "FreeRTOS.h"
 #include "bsp_interface.h"
-#include "task.h"
+#include "tasks/all_tasks.hpp"
 
 // Forward declarations — defined in tasks/*.cpp
 void comm_task(void*);

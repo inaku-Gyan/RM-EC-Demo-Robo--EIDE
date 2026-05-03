@@ -4,15 +4,10 @@
 #include <array>
 #include <cstring>
 
-extern "C" {
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "semphr.h"
 #include "usbd_cdc_if.h"
-
-// 定义在 usb_device.c，但未在头文件中导出。
-extern USBD_HandleTypeDef hUsbDeviceFS;  // NOLINT(readability-identifier-naming)
-}
 
 namespace usb {
 
@@ -60,14 +55,14 @@ extern "C" void usb_cdc_rx_handler(uint8_t* buf, uint32_t len) {
 
     BaseType_t woken = pdFALSE;
     xQueueSendFromISR(rx_queue, &pkt, &woken);
-    portYIELD_FROM_ISR(woken);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast)
+    portYIELD_FROM_ISR(woken);
 }
 
 extern "C" void usb_cdc_tx_cplt() {
     if (tx_sem == nullptr) { return; }
     BaseType_t woken = pdFALSE;
     xSemaphoreGiveFromISR(tx_sem, &woken);
-    portYIELD_FROM_ISR(woken);  // NOLINT(cppcoreguidelines-pro-type-cstyle-cast)
+    portYIELD_FROM_ISR(woken);
 }
 
 // ─── 对外 API ─────────────────────────────────────────────────────────────────

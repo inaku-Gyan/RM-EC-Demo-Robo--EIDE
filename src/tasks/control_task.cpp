@@ -1,5 +1,4 @@
-#include "FreeRTOS.h"  // IWYU pragma: keep
-#include "task.h"
+#include "all_tasks.hpp"
 
 // Stub: 1 kHz control loop skeleton.
 // TODO: read sensor data, run PID, write actuator outputs.

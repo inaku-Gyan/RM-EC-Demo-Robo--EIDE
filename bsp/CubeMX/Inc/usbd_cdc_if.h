@@ -95,6 +95,10 @@ extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 
+// 定义在 usb_device.c，但 CubeMX 未在头文件中导出。
+// 所以我们在这里自己导出一下，以供外部的抽象层/中间层使用。
+extern USBD_HandleTypeDef hUsbDeviceFS;
+
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
