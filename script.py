@@ -31,8 +31,6 @@ CLANG_TIDY_VERSION_RANGE: tuple[int | None, int | None] = (14, None)
 
 CommandType = Literal["list", "fmt", "lint", "clean", "check-tools"]
 
-VerboseLevel = Literal[0, 1, 2, 3]
-
 
 class ParsedArgs(argparse.Namespace):
     command: CommandType
@@ -40,17 +38,16 @@ class ParsedArgs(argparse.Namespace):
     clean_all: bool
     clang_format: str
     clang_tidy: str
-    verbose: VerboseLevel
+    quiet: bool
 
 
 def parse_args() -> ParsedArgs:
     parser = argparse.ArgumentParser(description="用于格式化、静态检查及其他代码检查的脚本。")
     parser.add_argument(
-        "--verbose",
-        choices=VerboseLevel.__args__,
-        default=2,
-        type=int,
-        help="详细程度（0-3）",
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="静默模式：减少输出信息，fmt fix 时不追踪修改的文件",
     )
     # 设置默认值，使所有子命令都能访问这些属性
     parser.set_defaults(fix=False, clean_all=False, clang_format="clang-format", clang_tidy="clang-tidy")
@@ -160,12 +157,19 @@ def check_version_in_range(major: int, version_range: tuple[int | None, int | No
     return True
 
 
-def quick_check(clang_format: str, target_file: str) -> bool:
-    result = subprocess.run(
-        [clang_format, target_file, "--dry-run", "--Werror", "--ferror-limit=1"],
-        capture_output=True,
-    )
-    return result.returncode == 0
+def format_file_inplace(clang_format: str, file_path: str) -> bool:
+    """运行 clang-format 并将输出与原始文件对比，有变化则写回文件。
+
+    仅需运行一次 clang-format 即可同时完成格式化和变更检测，返回文件是否被修改。
+    """
+    path = Path(file_path)
+    original = path.read_bytes()
+    result = subprocess.run([clang_format, file_path], capture_output=True)
+    formatted = result.stdout
+    if formatted != original:
+        path.write_bytes(formatted)
+        return True
+    return False
 
 
 # endregion
@@ -231,118 +235,90 @@ def run_check_tools(clang_format: str, clang_tidy: str) -> NoReturn:
         sys.exit(1)
 
 
-def run_fmt_check(root: Path, clang_format: str, verbose: VerboseLevel) -> NoReturn:
+def run_fmt_check(root: Path, clang_format: str, quiet: bool) -> NoReturn:
     print("检查用户代码格式...")
     files = collect_file_paths_as_posix(root)
-    print(f"共找到 {len(files)} 个文件。\n", flush=True)  # 刷新一下，避免 subprocess 的输出出现在这行之前
+    print(f"共找到 {len(files)} 个文件。\n", flush=True)
 
     failed = 0
     for target_file in files:
-        if verbose == 3:
-            print(f"正在检查：{target_file}", flush=True)
-
-        if quick_check(clang_format, target_file):
-            continue  # Already formatted
+        result = subprocess.run(
+            [clang_format, target_file, "--dry-run", "--Werror"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            continue
 
         failed += 1
-
-        if verbose == 1:
-            print(f"需要格式化：{target_file}", flush=True)
-        elif verbose >= 2:
-            #  重新执行以输出彩色错误信息
-            subprocess.run(
-                # 当 verbose == 3 时，不限制 clang-format 输出错误数量（即设为 0）
-                [clang_format, target_file, "--dry-run"],
-                text=True,
-            )
-
-    if (verbose > 0 and failed > 0) or verbose == 3:
-        print()
+        print(f"需要格式化：{target_file}", flush=True)
+        if not quiet and result.stderr:
+            print(result.stderr, end="", flush=True)
 
     if failed > 0:
-        print(f"格式检查失败：{failed} 个文件需要格式化。")
+        print(f"\n格式检查失败：{failed} 个文件需要格式化。")
         sys.exit(1)
 
     print("所有文件格式正确。")
     sys.exit(0)
 
 
-def run_fmt_fix(root: Path, clang_format: str, verbose: VerboseLevel) -> NoReturn:
+def run_fmt_fix(root: Path, clang_format: str, quiet: bool) -> NoReturn:
     print("格式化用户代码文件...")
     files = collect_file_paths_as_posix(root)
     print(f"共找到 {len(files)} 个文件。\n")
 
-    cnt = 0
-
-    for target_file in files:
-        if verbose >= 1:
-            # Check
-            if verbose == 3:
-                print(f"正在检查：{target_file}")
-
-            if quick_check(clang_format, target_file):
-                continue  # Already formatted
-
-            cnt += 1
-
-        if verbose >= 2:
-            print(f"正在格式化：{target_file}")
-
-        subprocess.run([clang_format, "-i", target_file], check=True)
-
-    if verbose == 0:
+    if quiet:
+        # 静默模式：直接使用 -i 原地修改，不追踪修改的文件
+        for target_file in files:
+            subprocess.run([clang_format, "-i", target_file], check=True)
         print("完成。")
     else:
-        print(f"完成，共格式化 {cnt} 个文件。")
+        # 普通模式：通过比较输出与原文件来判断是否有修改，仅运行一遍
+        cnt = 0
+        for target_file in files:
+            if format_file_inplace(clang_format, target_file):
+                cnt += 1
+                print(f"已格式化：{target_file}")
+        print(f"\n完成，共格式化 {cnt} 个文件。")
 
     sys.exit(0)
 
 
-def run_lint_check(root: Path, clang_tidy: str, verbose: VerboseLevel) -> NoReturn:
+def run_lint_check(root: Path, clang_tidy: str, quiet: bool) -> NoReturn:
     print("对用户代码文件进行静态分析...")
     files = collect_file_paths_as_posix(root)
-    print(f"共找到 {len(files)} 个文件。\n", flush=True)  # 刷新一下，避免 subprocess 的输出出现在这行之前
+    print(f"共找到 {len(files)} 个文件。\n", flush=True)
 
     failed = 0
     for target_file in files:
-        if verbose == 3:
-            print(f"正在检查：{target_file}", flush=True)
-
         result = subprocess.run(
             [clang_tidy, "--quiet", target_file],
-            capture_output=(verbose < 2),
+            capture_output=quiet,
             text=True,
         )
-
         if result.returncode == 0:
-            continue  # No issues
+            continue
 
         failed += 1
-
-        if verbose == 1:
+        if quiet:
             print(f"存在静态分析问题：{target_file}", flush=True)
-        elif verbose >= 2 and result.returncode != 0:
-            # 当 capture_output=False 时输出已直接流向终端，此处无需重复打印
-            pass
-
-    if (verbose > 0 and failed > 0) or verbose == 3:
-        print()
 
     if failed > 0:
-        print(f"静态分析失败：{failed} 个文件存在问题。")
+        print(f"\n静态分析失败：{failed} 个文件存在问题。")
         sys.exit(1)
 
     print("所有文件通过静态分析。")
     sys.exit(0)
 
 
-def run_lint_fix(root: Path, clang_tidy: str, verbose: VerboseLevel) -> NoReturn:
+def run_lint_fix(root: Path, clang_tidy: str, quiet: bool) -> NoReturn:
     print("对用户代码文件应用静态分析修复...")
     files = collect_file_paths_as_posix(root)
     print(f"共找到 {len(files)} 个文件。\n")
 
     for target_file in files:
-        if verbose >= 2:
+        if not quiet:
             print(f"正在处理：{target_file}")
 
         subprocess.run(
@@ -391,13 +367,13 @@ def main() -> NoReturn:
         case "fmt":
             clang_format = ensure_tool(args.clang_format)
             if args.fix:
-                return run_fmt_fix(root, clang_format, args.verbose)
-            return run_fmt_check(root, clang_format, args.verbose)
+                return run_fmt_fix(root, clang_format, args.quiet)
+            return run_fmt_check(root, clang_format, args.quiet)
         case "lint":
             clang_tidy = ensure_tool(args.clang_tidy)
             if args.fix:
-                return run_lint_fix(root, clang_tidy, args.verbose)
-            return run_lint_check(root, clang_tidy, args.verbose)
+                return run_lint_fix(root, clang_tidy, args.quiet)
+            return run_lint_check(root, clang_tidy, args.quiet)
         case "clean":
             return run_clean(root, args.clean_all)
         case "check-tools":
