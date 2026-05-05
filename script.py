@@ -25,6 +25,11 @@ VALID_SUFFIXES = frozenset((".c", ".h", ".cpp", ".hpp", ".cc", ".hh", ".cxx", ".
 CLANG_FORMAT_VERSION_RANGE: tuple[int | None, int | None] = (18, None)
 CLANG_TIDY_VERSION_RANGE: tuple[int | None, int | None] = (18, None)
 
+# clang-tidy 编译数据库（compile_commands.json）所在目录的默认路径（相对于项目根目录）
+# EIDE 构建时会在此目录下生成 compile_commands.json。
+# 若文件不存在，clang-tidy 将缺少头文件路径和宏定义，导致检查结果不准确。
+COMPILE_COMMANDS_PATH = "build"
+
 # endregion
 
 # region CLI 参数
@@ -39,6 +44,7 @@ class ParsedArgs(argparse.Namespace):
     clang_format: str
     clang_tidy: str
     quiet: bool
+    compile_commands_db: str
 
 
 def parse_args() -> ParsedArgs:
@@ -50,7 +56,13 @@ def parse_args() -> ParsedArgs:
         help="静默模式：减少输出信息，fmt fix 时不追踪修改的文件",
     )
     # 设置默认值，使所有子命令都能访问这些属性
-    parser.set_defaults(fix=False, clean_all=False, clang_format="clang-format", clang_tidy="clang-tidy")
+    parser.set_defaults(
+        fix=False,
+        clean_all=False,
+        clang_format="clang-format",
+        clang_tidy="clang-tidy",
+        compile_commands_db=COMPILE_COMMANDS_PATH,
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -70,6 +82,13 @@ def parse_args() -> ParsedArgs:
         "--clang-tidy",
         default="clang-tidy",
         help="clang-tidy 可执行文件名或路径（默认：clang-tidy）",
+    )
+    lint_parser.add_argument(
+        "-p",
+        "--compile-commands-db",
+        default=COMPILE_COMMANDS_PATH,
+        metavar="PATH",
+        help=f"编译数据库目录或 compile_commands.json 文件路径（默认：{COMPILE_COMMANDS_PATH}）",
     )
 
     clean_parser = subparsers.add_parser("clean", help="删除构建产物")
@@ -289,15 +308,35 @@ def run_fmt_fix(root: Path, clang_format: str, quiet: bool) -> NoReturn:
     sys.exit(0)
 
 
-def run_lint_check(root: Path, clang_tidy: str, quiet: bool) -> NoReturn:
+def _resolve_compile_commands(root: Path, db_path: str) -> list[str]:
+    """返回传递给 clang-tidy 的 -p 参数列表。
+
+    若路径不存在，打印警告并返回空列表（clang-tidy 将在无编译数据库的情况下运行，
+    这会导致头文件找不到、宏定义缺失，使检查结果不准确）。
+    """
+    resolved = (root / db_path).resolve()
+    if not resolved.exists():
+        print(
+            f"警告：编译数据库路径不存在：{db_path}\n"
+            "  clang-tidy 将在缺少编译信息的情况下运行，检查结果可能不准确。\n"
+            "  请先构建项目以生成 compile_commands.json，或通过 -p 参数指定正确路径。",
+            file=sys.stderr,
+        )
+        return []
+    return ["-p", str(resolved)]
+
+
+def run_lint_check(root: Path, clang_tidy: str, quiet: bool, compile_commands_db: str) -> NoReturn:
     print("对用户代码文件进行静态分析...")
     files = collect_file_paths_as_posix(root)
     print(f"共找到 {len(files)} 个文件。\n", flush=True)
 
+    db_args = _resolve_compile_commands(root, compile_commands_db)
+
     failed = 0
     for target_file in files:
         result = subprocess.run(
-            [clang_tidy, "--quiet", target_file],
+            [clang_tidy, "--quiet", *db_args, target_file],
             capture_output=quiet,
             text=True,
         )
@@ -316,17 +355,19 @@ def run_lint_check(root: Path, clang_tidy: str, quiet: bool) -> NoReturn:
     sys.exit(0)
 
 
-def run_lint_fix(root: Path, clang_tidy: str, quiet: bool) -> NoReturn:
+def run_lint_fix(root: Path, clang_tidy: str, quiet: bool, compile_commands_db: str) -> NoReturn:
     print("对用户代码文件应用静态分析修复...")
     files = collect_file_paths_as_posix(root)
     print(f"共找到 {len(files)} 个文件。\n")
+
+    db_args = _resolve_compile_commands(root, compile_commands_db)
 
     for target_file in files:
         if not quiet:
             print(f"正在处理：{target_file}")
 
         subprocess.run(
-            [clang_tidy, "--fix", "--fix-errors", "--quiet", target_file],
+            [clang_tidy, "--fix", "--fix-errors", "--quiet", *db_args, target_file],
             check=False,
         )
 
@@ -376,8 +417,8 @@ def main() -> NoReturn:
         case "lint":
             clang_tidy = ensure_tool(args.clang_tidy)
             if args.fix:
-                return run_lint_fix(root, clang_tidy, args.quiet)
-            return run_lint_check(root, clang_tidy, args.quiet)
+                return run_lint_fix(root, clang_tidy, args.quiet, args.compile_commands_db)
+            return run_lint_check(root, clang_tidy, args.quiet, args.compile_commands_db)
         case "clean":
             return run_clean(root, args.clean_all)
         case "check-tools":
