@@ -16,14 +16,14 @@ from typing import Literal, NoReturn, cast
 # 用户代码所在的目录（相对于项目根目录）
 # 只会处理这些目录下的文件，其他目录（例如 .vscode、.github、build 等）会被忽略
 # 新增或移除用户目录时，请修改此处。
-USER_DIRS = ("src", "lib")
+USER_DIRS = ("src",)
 
-VALID_SUFFIXES = frozenset((".c", ".h", ".cpp", ".hpp"))
+VALID_SUFFIXES = frozenset((".c", ".h", ".cpp", ".hpp", ".cc", ".hh", ".cxx", ".hxx"))
 
 # clang-format 和 clang-tidy 的版本要求（最低大版本号，最高大版本号）
 # 使用 None 表示该方向不限制版本
-CLANG_FORMAT_VERSION_RANGE: tuple[int | None, int | None] = (14, None)
-CLANG_TIDY_VERSION_RANGE: tuple[int | None, int | None] = (14, None)
+CLANG_FORMAT_VERSION_RANGE: tuple[int | None, int | None] = (18, None)
+CLANG_TIDY_VERSION_RANGE: tuple[int | None, int | None] = (18, None)
 
 # endregion
 
@@ -186,10 +186,10 @@ def run_check_tools(clang_format: str, clang_tidy: str) -> NoReturn:
     print("检查工具可用性及版本...\n")
     all_ok = True
 
-    for binary, version_range, label in [
+    for binary, version_range, label in (
         (clang_format, CLANG_FORMAT_VERSION_RANGE, "clang-format"),
         (clang_tidy, CLANG_TIDY_VERSION_RANGE, "clang-tidy"),
-    ]:
+    ):
         lo, hi = version_range
         if lo is not None and hi is not None:
             range_desc = f"[{lo}, {hi}]"
@@ -224,13 +224,13 @@ def run_check_tools(clang_format: str, clang_tidy: str) -> NoReturn:
         elif not check_version_in_range(major, version_range):
             print(f"  ✗ {label}：版本 {major} 不符合要求（要求：{range_desc}）")
             print(f"    当前版本：{version_str}")
-            print(f"    → 请升级 {label}")
             all_ok = False
         else:
             print(f"  ✓ {label}：版本 {major} 符合要求（要求：{range_desc}）")
             print(f"    {version_str}")
 
-    print()
+        print()
+
     if all_ok:
         print("所有工具检查通过。")
         sys.exit(0)
