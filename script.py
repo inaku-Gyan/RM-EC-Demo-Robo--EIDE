@@ -28,7 +28,7 @@ CLANG_TIDY_VERSION_RANGE: tuple[int | None, int | None] = (18, None)
 # clang-tidy 编译数据库（compile_commands.json）所在目录的默认路径（相对于项目根目录）
 # EIDE 构建时会在此目录下生成 compile_commands.json。
 # 若文件不存在，clang-tidy 将缺少头文件路径和宏定义，导致检查结果不准确。
-COMPILE_COMMANDS_PATH = "build"
+COMPILE_COMMANDS_PATH = "build/Debug"
 
 # endregion
 
