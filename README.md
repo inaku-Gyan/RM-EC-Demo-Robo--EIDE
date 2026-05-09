@@ -44,10 +44,18 @@
 | --- | --- | --- |
 | **VS Code** | 编辑器 | [code.visualstudio.com](https://code.visualstudio.com) |
 | **EIDE**（Embedded IDE） | VS Code 嵌入式开发插件，管理工具链、构建和烧录 | VS Code 扩展市场搜索 `EIDE` |
-| 其他工作区推荐的扩展 | 语言服务、调试、串口监控功能等 | 详见 VS Code 工作区配置文件。 |
+| 其他工作区推荐的扩展 | 提供语言服务、调试、串口监控等功能 | 详见 VS Code 工作区配置文件 |
 | **ARM GCC 工具链** | 交叉编译器（`arm-none-eabi-gcc`） | 通过 EIDE 插件下载 |
 | **OpenOCD** | 烧录 / 调试工具，支持 CMSIS-DAP 调试器 | 通过 EIDE 插件下载 |
-| **Python ≥ 3.10** | 运行 `script.py` 所需 | [python.org](https://www.python.org) |
+| **Python ≥ 3.10** | 运行 `script.py` 所需 | [python.org](https://www.python.org) 或 [uv](https://docs.astral.sh/uv/) |
+
+推荐使用 VS Code 的 **配置文件（Profile）** 功能安装工作区插件，这样可以在不同的项目间实现隔离，互不干扰。
+
+#### 语言服务
+
+本项目配置使用 LLVM 的 [clangd 扩展](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd)提供 C/C++ 语言服务。该插件与[微软的 C/C++](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)扩展相冲突，故请禁用或卸载后者。
+
+与微软的 C/C++ 扩展相比，clangd 提供了更智能的代码分析、语法跳转、重构等功能，并兼具格式化、lint 检查功能。
 
 ### 需自行安装（不由 EIDE 管理）
 
