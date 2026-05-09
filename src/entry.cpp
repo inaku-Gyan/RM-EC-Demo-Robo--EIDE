@@ -1,4 +1,6 @@
-#include <array>
+#include <etl/array.h>
+
+#include <cstdint>
 
 #include "bsp_interface.h"
 #include "tasks/all_tasks.hpp"
@@ -14,9 +16,9 @@ StaticTask_t s_comm_tcb;
 StaticTask_t s_control_tcb;
 StaticTask_t s_monitor_tcb;
 
-std::array<StackType_t, 512> s_comm_stack;
-std::array<StackType_t, 256> s_control_stack;
-std::array<StackType_t, 256> s_monitor_stack;
+etl::array<StackType_t, 512> s_comm_stack;
+etl::array<StackType_t, 256> s_control_stack;
+etl::array<StackType_t, 256> s_monitor_stack;
 
 }  // namespace
 
