@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "bsp_interface.h"
+#include "cmsis_compiler.h"  // IWYU pragma: keep
 #include "tasks/all_tasks.hpp"
 
 // Forward declarations — defined in tasks/*.cpp
@@ -47,7 +48,7 @@ extern "C" void user_init() {
 }
 
 extern "C" void user_error_handler() {
-    __asm volatile("CPSID I" : : : "memory");
+    __disable_irq();
     for (;;) {}
 }
 
