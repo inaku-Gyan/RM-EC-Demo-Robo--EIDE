@@ -1,5 +1,6 @@
 #include "usb_comm.hpp"
 
+#include <etl/algorithm.h>
 #include <etl/array.h>
 #include <etl/span.h>
 

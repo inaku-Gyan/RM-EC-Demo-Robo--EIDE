@@ -1,6 +1,6 @@
 WarningsAsErrors: "*"
 
-HeaderFilterRegex: "src/|lib/ecx/"
+HeaderFilterRegex: "src/"
 
 Checks: >
   bugprone-*,
@@ -18,6 +18,10 @@ Checks: >
   -readability-magic-numbers,
 
 CheckOptions:
+  # 第三方代码（CubeMX 生成的 BSP、lib/ 下所有库）走"整个库一起 include"风格，
+  # 不符合 misc-include-cleaner 的 IWYU 模型，对其符号不再要求直接 include。
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: "bsp/CubeMX/.*"
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
   - key: readability-identifier-naming.StructCase
