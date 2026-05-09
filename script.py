@@ -70,16 +70,16 @@ def parse_args() -> ParsedArgs:
 
     subparsers.add_parser("list", help="列出所有用户源文件")
 
-    fmt_parser = subparsers.add_parser("fmt", help="检查或应用 clang-format 格式化")
-    fmt_parser.add_argument("--fix", action="store_true", help="应用格式化（默认：仅检查）")
+    fmt_parser = subparsers.add_parser("fmt", help="检查或应用 clang-format 格式化（默认：仅检查）")
+    fmt_parser.add_argument("--fix", action="store_true", help="进行格式化")
     fmt_parser.add_argument(
         "--clang-format",
         default="clang-format",
         help="clang-format 可执行文件名或路径（默认：clang-format）",
     )
 
-    lint_parser = subparsers.add_parser("lint", help="检查或应用 clang-tidy 静态分析")
-    lint_parser.add_argument("--fix", action="store_true", help="应用修复（默认：仅检查）")
+    lint_parser = subparsers.add_parser("lint", help="检查或应用 clang-tidy 静态分析（默认：仅检查）")
+    lint_parser.add_argument("--fix", action="store_true", help="进行自动修复")
     lint_parser.add_argument(
         "--clang-tidy",
         default="clang-tidy",
@@ -408,9 +408,7 @@ def _extract_compiler(entry: dict) -> str | None:
     return None
 
 
-def _classify_compiler(
-    compiler: str, entry: dict
-) -> tuple[str, str, str, list[str]] | None:
+def _classify_compiler(compiler: str, entry: dict) -> tuple[str, str, str, list[str]] | None:
     """把一条记录解析成 (target_triple, kind, g++ 路径, 架构 flag 列表)。
 
     kind 为 'g++' 表示该条本身就是 g++（首选），'gcc' 表示需要把同目录下的 -gcc 换成 -g++。
