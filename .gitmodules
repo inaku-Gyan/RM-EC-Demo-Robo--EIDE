@@ -1,0 +1,4 @@
+[submodule "lib/etl"]
+	path = lib/etl
+	url = https://github.com/inaku-Gyan/ETL-pruned.git
+	branch = release
