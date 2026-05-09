@@ -1,7 +1,10 @@
 #include "usb_comm.hpp"
 
-#include <algorithm>
-#include <array>
+#include <etl/algorithm.h>
+#include <etl/array.h>
+#include <etl/span.h>
+
+#include <cstdint>
 #include <cstring>
 
 #include "FreeRTOS.h"
@@ -13,16 +16,16 @@ namespace usb {
 
 namespace {
 
-alignas(4) std::array<std::array<uint8_t, 64>, 2> rx_buf{};
+alignas(4) etl::array<etl::array<uint8_t, 64>, 2> rx_buf{};
 int rx_active = 0;
 
-alignas(4) std::array<uint8_t, 512> tx_buf{};
+alignas(4) etl::array<uint8_t, 512> tx_buf{};
 StaticSemaphore_t tx_sem_storage;
 SemaphoreHandle_t tx_sem = nullptr;
 
 constexpr size_t                                       RX_QUEUE_DEPTH = 4;
 StaticQueue_t                                          rx_q_storage;
-std::array<uint8_t, RX_QUEUE_DEPTH * sizeof(RxPacket)> rx_q_buf{};
+etl::array<uint8_t, RX_QUEUE_DEPTH * sizeof(RxPacket)> rx_q_buf{};
 QueueHandle_t                                          rx_queue = nullptr;
 
 }  // namespace
@@ -50,7 +53,7 @@ extern "C" void usb_cdc_rx_handler(uint8_t* buf, uint32_t len) {
     if (rx_queue == nullptr) { return; }
 
     RxPacket pkt;
-    pkt.len = std::min(len, static_cast<uint32_t>(pkt.data.size()));
+    pkt.len = etl::min(len, static_cast<uint32_t>(pkt.data.size()));
     std::memcpy(pkt.data.data(), buf, pkt.len);
 
     BaseType_t woken = pdFALSE;
@@ -67,7 +70,7 @@ extern "C" void usb_cdc_tx_cplt() {
 
 // ─── 对外 API ─────────────────────────────────────────────────────────────────
 
-bool send(std::span<const uint8_t> data) {
+bool send(const etl::span<const uint8_t>& data) {
     if (data.size() > tx_buf.size()) { return false; }
     xSemaphoreTake(tx_sem, portMAX_DELAY);
     std::memcpy(tx_buf.data(), data.data(), data.size());

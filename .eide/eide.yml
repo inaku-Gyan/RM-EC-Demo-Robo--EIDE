@@ -53,6 +53,7 @@ targets:
           asm-compiler: {}
           beforeBuildTasks: []
           c/cpp-compiler:
+            CXX_FLAGS: -D__PROGRAM_START
             language-c: gnu17
             language-cpp: gnu++20
             no-exceptions: true
