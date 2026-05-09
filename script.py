@@ -4,7 +4,9 @@
 from __future__ import annotations as _annotations
 
 import argparse
+import json
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -308,12 +310,16 @@ def run_fmt_fix(root: Path, clang_format: str, quiet: bool) -> NoReturn:
     sys.exit(0)
 
 
-def _resolve_compile_commands(root: Path, db_path: str) -> list[str]:
-    """返回传递给 clang-tidy 的 -p 参数列表。
+def _prepare_lint_args(root: Path, db_path: str) -> list[str]:
+    """组装 clang-tidy 的数据库 / 交叉工具链相关参数。
 
-    若路径不存在，打印警告并返回空列表（clang-tidy 将在无编译数据库的情况下运行，
-    这会导致头文件找不到、宏定义缺失，使检查结果不准确）。
+    包括 -p 指向 compile_commands.json，以及让 clang 找到 ARM GCC 标准库头的开关：
+    --target=<triple> 和 --gcc-toolchain=<root>，外加 -Wno-unused-command-line-argument
+    用来屏蔽 clang 对 --specs=*.specs 等 GCC-only flag 的"argument unused"警告
+    （与 .clang-tidy 中 WarningsAsErrors: "*" 叠加后会变成 error）。
     """
+    suppress_unused = "--extra-arg-before=-Wno-unused-command-line-argument"
+
     resolved = (root / db_path).resolve()
     if not resolved.exists():
         print(
@@ -322,8 +328,168 @@ def _resolve_compile_commands(root: Path, db_path: str) -> list[str]:
             "  请先构建项目以生成 compile_commands.json，或通过 -p 参数指定正确路径。",
             file=sys.stderr,
         )
+        return [suppress_unused]
+
+    args = ["-p", str(resolved)]
+    json_file = resolved if resolved.is_file() else resolved / "compile_commands.json"
+    args.extend(_detect_cross_toolchain_args(json_file))
+    args.append(suppress_unused)
+    return args
+
+
+def _detect_cross_toolchain_args(json_file: Path) -> list[str]:
+    """从 compile_commands.json 推断交叉工具链，转成 clang-tidy 的额外参数。
+
+    本来想用 --target=<triple> + --gcc-toolchain=<root> 让 clang 自己定位 GCC 头，
+    但 clang ≥ 16 的 BareMetal driver（--target=arm-none-eabi 触发）已不再走 GCC
+    发现机制，会忽略 --gcc-toolchain/--gcc-install-dir。所以只能退回到 query-driver：
+    跑一次交叉 g++ 拿到系统头列表，再以 --target=<triple> + 一组 -isystem 透传给 clang。
+
+    成功时返回 --target= 加多个 -isystem 的 --extra-arg-before= 列表；无法推断时返回 []。
+    """
+    if not json_file.is_file():
         return []
-    return ["-p", str(resolved)]
+
+    try:
+        with json_file.open(encoding="utf-8") as f:
+            db = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    if not isinstance(db, list):
+        return []
+
+    # 优先选 g++ 条目：g++ 的 system include 是 gcc 的超集（多了 c++/...）
+    # 找不到 g++ 时退而求其次用 gcc 路径反推 g++（同目录同前缀，把 -gcc 换成 -g++）
+    selected: tuple[str, str, list[str]] | None = None
+    fallback: tuple[str, str, list[str]] | None = None
+    for entry in db:
+        if not isinstance(entry, dict):
+            continue
+        compiler = _extract_compiler(entry)
+        if compiler is None:
+            continue
+        info = _classify_compiler(compiler, entry)
+        if info is None:
+            continue
+        triple, kind, gpp_path, arch_flags = info
+        if kind == "g++":
+            selected = (triple, gpp_path, arch_flags)
+            break
+        if fallback is None:
+            fallback = (triple, gpp_path, arch_flags)
+    chosen = selected or fallback
+    if chosen is None:
+        return []
+    triple, gpp_path, arch_flags = chosen
+
+    includes = _query_gcc_system_includes(gpp_path, arch_flags)
+    if not includes:
+        return []
+
+    args = [f"--extra-arg-before=--target={triple}"]
+    args.extend(f"--extra-arg-before=-isystem{p}" for p in includes)
+    return args
+
+
+def _extract_compiler(entry: dict) -> str | None:
+    """从一条 compile_commands.json 记录中取出编译器路径字符串。"""
+    args = entry.get("arguments")
+    if isinstance(args, list) and args and isinstance(args[0], str):
+        return args[0]
+    cmd = entry.get("command")
+    if isinstance(cmd, str):
+        try:
+            tokens = shlex.split(cmd, posix=True)
+        except ValueError:
+            return None
+        if tokens:
+            return tokens[0]
+    return None
+
+
+def _classify_compiler(
+    compiler: str, entry: dict
+) -> tuple[str, str, str, list[str]] | None:
+    """把一条记录解析成 (target_triple, kind, g++ 路径, 架构 flag 列表)。
+
+    kind 为 'g++' 表示该条本身就是 g++（首选），'gcc' 表示需要把同目录下的 -gcc 换成 -g++。
+    非交叉命名或路径解析失败时返回 None。
+    """
+    path = Path(compiler)
+    stem = path.stem  # 顺带去 .exe（Windows）
+
+    kind: str | None = None
+    triple: str | None = None
+    for suffix, tag in (("-g++", "g++"), ("-gcc", "gcc")):
+        if stem.endswith(suffix) and stem != suffix:
+            kind = tag
+            triple = stem[: -len(suffix)]
+            break
+    if kind is None or triple is None:
+        return None
+
+    if not path.is_absolute():
+        resolved = shutil.which(compiler)
+        if resolved is None:
+            return None
+        path = Path(resolved)
+
+    if kind == "gcc":
+        gpp_name = path.stem[: -len("-gcc")] + "-g++" + path.suffix
+        gpp_path = str(path.with_name(gpp_name))
+    else:
+        gpp_path = str(path)
+
+    return triple, kind, gpp_path, _extract_arch_flags(entry)
+
+
+def _extract_arch_flags(entry: dict) -> list[str]:
+    """提取条目中的 -m* 架构 flag，用来让 GCC 选对 multilib 变体。"""
+    args = entry.get("arguments")
+    if isinstance(args, list):
+        tokens = [a for a in args if isinstance(a, str)]
+    else:
+        cmd = entry.get("command")
+        if not isinstance(cmd, str):
+            return []
+        try:
+            tokens = shlex.split(cmd, posix=True)
+        except ValueError:
+            return []
+    return [t for t in tokens if t.startswith("-m")]
+
+
+def _query_gcc_system_includes(gpp: str, arch_flags: list[str]) -> list[str]:
+    """跑 g++ -E -Wp,-v 解析其默认系统头搜索路径。
+
+    输入用关闭的 stdin（input=""），无须 /dev/null 或 NUL，跨平台一致。
+    """
+    try:
+        result = subprocess.run(
+            [gpp, "-E", "-Wp,-v", "-x", "c++", *arch_flags, "-"],
+            input="",
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return []
+
+    paths: list[str] = []
+    in_block = False
+    for line in result.stderr.splitlines():
+        if "#include <...> search starts here:" in line:
+            in_block = True
+            continue
+        if line.startswith("End of search list."):
+            break
+        if in_block:
+            stripped = line.strip()
+            if stripped:
+                paths.append(stripped)
+    return paths
 
 
 def run_lint_check(root: Path, clang_tidy: str, quiet: bool, compile_commands_db: str) -> NoReturn:
@@ -331,12 +497,12 @@ def run_lint_check(root: Path, clang_tidy: str, quiet: bool, compile_commands_db
     files = collect_file_paths_as_posix(root)
     print(f"共找到 {len(files)} 个文件。\n", flush=True)
 
-    db_args = _resolve_compile_commands(root, compile_commands_db)
+    lint_args = _prepare_lint_args(root, compile_commands_db)
 
     failed = 0
     for target_file in files:
         result = subprocess.run(
-            [clang_tidy, "--quiet", *db_args, target_file],
+            [clang_tidy, "--quiet", *lint_args, target_file],
             capture_output=quiet,
             text=True,
         )
@@ -360,14 +526,14 @@ def run_lint_fix(root: Path, clang_tidy: str, quiet: bool, compile_commands_db: 
     files = collect_file_paths_as_posix(root)
     print(f"共找到 {len(files)} 个文件。\n")
 
-    db_args = _resolve_compile_commands(root, compile_commands_db)
+    lint_args = _prepare_lint_args(root, compile_commands_db)
 
     for target_file in files:
         if not quiet:
             print(f"正在处理：{target_file}")
 
         subprocess.run(
-            [clang_tidy, "--fix", "--fix-errors", "--quiet", *db_args, target_file],
+            [clang_tidy, "--fix", "--fix-errors", "--quiet", *lint_args, target_file],
             check=False,
         )
 
