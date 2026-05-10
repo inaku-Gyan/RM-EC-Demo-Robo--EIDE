@@ -9,6 +9,7 @@
     // --------------------------- 语言服务器配置 ---------------------------
     // clangd 配置
     "clangd.arguments": [
+      "--query-driver=arm-none-eabi-gcc", // 指定 clangd 使用 arm-none-eabi-gcc 作为编译器，以正确解析代码（主要用于避免 Arm GCC 系统库报错）
       "--background-index", // 启用后台索引功能，以提高代码导航和智能提示的性能
       "--clang-tidy", // 启用 clang-tidy 进行代码检查
       "--header-insertion=never"
