@@ -2,3 +2,7 @@
 	path = lib/etl
 	url = https://github.com/inaku-Gyan/ETL-pruned.git
 	branch = release
+[submodule "lib/ecx"]
+	path = lib/ecx
+	url = git@github.com:inaku-Gyan/RM-EC-Demo-SharedLib--Xmake.git
+	branch = release
