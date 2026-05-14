@@ -24,15 +24,15 @@ targets:
         - USE_FULL_ASSERT
         - DEBUG
       incList:
-        - bsp/CubeMX/Drivers/CMSIS/Device/ST/STM32F4xx/Include
-        - bsp/CubeMX/Drivers/CMSIS/Include
-        - bsp/CubeMX/Drivers/STM32F4xx_HAL_Driver/Inc
-        - bsp/CubeMX/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
-        - bsp/CubeMX/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
-        - bsp/CubeMX/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
-        - bsp/CubeMX/Middlewares/Third_Party/FreeRTOS/Source/include
-        - bsp/CubeMX/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
-        - bsp/CubeMX/Inc
+        - bsp/CubeMX/STM32F407IGHx/Drivers/CMSIS/Device/ST/STM32F4xx/Include
+        - bsp/CubeMX/STM32F407IGHx/Drivers/CMSIS/Include
+        - bsp/CubeMX/STM32F407IGHx/Drivers/STM32F4xx_HAL_Driver/Inc
+        - bsp/CubeMX/STM32F407IGHx/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc
+        - bsp/CubeMX/STM32F407IGHx/Middlewares/ST/STM32_USB_Device_Library/Core/Inc
+        - bsp/CubeMX/STM32F407IGHx/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2
+        - bsp/CubeMX/STM32F407IGHx/Middlewares/Third_Party/FreeRTOS/Source/include
+        - bsp/CubeMX/STM32F407IGHx/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
+        - bsp/CubeMX/STM32F407IGHx/Inc
         - bsp
         - src
         - lib
@@ -78,7 +78,7 @@ targets:
             output-format: elf
             remove-unused-input-sections: true
             use-float-printf: true
-        scatterFilePath: bsp/CubeMX/STM32F407XX_FLASH.ld
+        scatterFilePath: bsp/CubeMX/STM32F407IGHx/STM32F407XX_FLASH.ld
         storageLayout:
           RAM: []
           ROM: []
