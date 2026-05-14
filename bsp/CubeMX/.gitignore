@@ -1,0 +1,4 @@
+# ─── STM32CubeMX ──────────────────────────────────────────────────────────────
+# CubeMX can regenerate its own Makefile, which we do not actually use.
+Makefile
+build/
