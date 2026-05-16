@@ -36,6 +36,7 @@ targets:
         - src
         - lib
         - lib-config/etl
+        - lib-config/ecx
       libList: []
     excludeList: []
     settings:
