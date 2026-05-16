@@ -35,8 +35,7 @@ targets:
         - bsp/CubeMX/STM32F407IGHx/Inc
         - src
         - lib
-        - lib-config/etl
-        - lib-config/ecx
+        - lib-config
       libList: []
     excludeList: []
     settings:
