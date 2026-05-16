@@ -4,6 +4,8 @@
 
 ---
 
+本仓库使用了 Git Submodule 引入部分外部库。仓库拉取方法见 [Git Submodule 相关说明](docs/git-submodule.md)。
+
 ## 目录结构
 
 ```
@@ -73,26 +75,6 @@
 
 ```bash
 python3 script.py check-tools
-```
-
----
-
-## Git Submodule
-
-本项目使用 Git Submodule 引入一些外部库。
-
-**首次克隆后初始化 submodule：**
-
-```bash
-git clone --recurse-submodules <repo-url>
-# 或克隆后再初始化：
-git submodule update --init --recursive
-```
-
-**更新 submodule 到最新版本：**
-
-```bash
-git submodule update --remote
 ```
 
 ---
