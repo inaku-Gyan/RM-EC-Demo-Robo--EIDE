@@ -16,5 +16,7 @@
 version: "2.1"
 options:
     Debug:
-        files: {}
+        files:
+            bsp/CubeMX/**: -I./bsp/cubemx_inc
+            "!bsp/**": -I./bsp/export
         virtualPathFiles: {}

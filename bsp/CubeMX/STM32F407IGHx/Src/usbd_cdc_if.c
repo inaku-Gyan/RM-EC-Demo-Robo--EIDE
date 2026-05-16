@@ -22,7 +22,7 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-#include "bsp_interface.h"
+#include "bsp_hooks/usb_cdc.h"
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -152,8 +152,7 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
-  usb_cdc_init_rx();
-  return (USBD_OK);
+  return bsp_usb_cdc_init();
   /* USER CODE END 3 */
 }
 
@@ -164,7 +163,7 @@ static int8_t CDC_Init_FS(void)
 static int8_t CDC_DeInit_FS(void)
 {
   /* USER CODE BEGIN 4 */
-  return (USBD_OK);
+  return bsp_usb_cdc_deinit();
   /* USER CODE END 4 */
 }
 
@@ -259,8 +258,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  usb_cdc_rx_handler(Buf, *Len);
-  return (USBD_OK);
+  return usb_cdc_rx(Buf, Len);
   /* USER CODE END 6 */
 }
 
@@ -279,6 +277,16 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
+
+  // 这个函数并不是回调函数，而是用户主动调用
+  // 我们直接使用 C++ 重新实现即可。
+  // 所以这个函数实际用不到，也不用做桥接
+
+  // 在这里断言一下，防止用户误用这个函数
+  assert_param(0);
+  return USBD_FAIL;
+
+  // 以下是 CubeMX 生成的默认代码，这里就不删除了，可以用作参考
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
   if (hcdc->TxState != 0){
     return USBD_BUSY;
@@ -305,10 +313,7 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 13 */
-  UNUSED(Buf);
-  UNUSED(Len);
-  UNUSED(epnum);
-  usb_cdc_tx_cplt();
+  return usb_cdc_tx_cplt();
   /* USER CODE END 13 */
   return result;
 }

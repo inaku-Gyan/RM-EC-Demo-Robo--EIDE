@@ -33,7 +33,6 @@ targets:
         - bsp/CubeMX/STM32F407IGHx/Middlewares/Third_Party/FreeRTOS/Source/include
         - bsp/CubeMX/STM32F407IGHx/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F
         - bsp/CubeMX/STM32F407IGHx/Inc
-        - bsp
         - src
         - lib
         - lib-config/etl

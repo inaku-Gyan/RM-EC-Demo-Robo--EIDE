@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "bsp_interface.h"
+#include "bsp_hooks/general.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -78,7 +78,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  bsp_init_after_rtos_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -123,12 +123,11 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  user_init();
-  /* Infinite loop — real work is done in tasks created by user_init() */
-  for(;;)
-  {
-    osDelay(1000);
-  }
+  bsp_init_in_rtos_thread();
+
+  // 这个默认任务是 CubeMX 自动生成的
+  // CubeMX 会用它来做一些初始化工作（比如 USB 设备），但我们不需要它一直运行，所以在这里直接删除它
+  osThreadTerminate(defaultTaskHandle);
   /* USER CODE END StartDefaultTask */
 }
 
