@@ -4,5 +4,5 @@
 	branch = release
 [submodule "lib/ecx"]
 	path = lib/ecx
-	url = git@github.com:inaku-Gyan/RM-EC-Demo-SharedLib--Xmake.git
+	url = https://github.com/inaku-Gyan/RM-EC-Demo-SharedLib--CMake.git
 	branch = release
